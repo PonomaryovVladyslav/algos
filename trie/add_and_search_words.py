@@ -1,6 +1,6 @@
 class TrieNode:
     def __init__(self):
-        self.children = {}  # Ключи — буквы, значения — узлы TrieNode
+        self.children = {}  # O(1) память на хранение ссылок на потомков
         self.is_end = False  # Флаг конца слова
 
 
@@ -8,38 +8,49 @@ class WordDictionary:
     def __init__(self):
         self.root = TrieNode()
 
-    def addWord(self, word: str) -> None:
+    def add_word(self, word: str) -> None:
+        """Добавляет слово в Trie.
+        Временная сложность: O(m)
+        Пространственная сложность: O(n * m) (где n — кол-во слов, m — средняя длина слова)
+        """
         node = self.root
         for char in word:
             if char not in node.children:
-                node.children[char] = TrieNode()  # Создаём новый узел
-            node = node.children[char]  # Переход к следующему узлу
-        node.is_end = True  # Устанавливаем флаг конца слова
+                node.children[char] = TrieNode()  # O(1) вставка в HashMap
+            node = node.children[char]  # O(1) доступ
+        node.is_end = True
 
     def search(self, word: str) -> bool:
-        return self._dfs(word, 0, self.root)  # Запускаем DFS от корня
+        """Ищет слово в Trie с возможностью использования '.'
+        Временная сложность: O(26^m) в худшем случае, O(m) в среднем случае
+        Пространственная сложность: O(m) (глубина стека в рекурсии)
+        """
+        return self._dfs(word, 0, self.root)
 
     def _dfs(self, word: str, index: int, node: TrieNode) -> bool:
+        """Рекурсивный DFS-поиск по Trie."""
         if index == len(word):
-            return node.is_end  # Если дошли до конца, проверяем, является ли узел концом слова
+            return node.is_end
 
         char = word[index]
 
-        if char == ".":  # Обрабатываем wildcard '.'
-            for child in node.children.values():  # Проверяем все возможные буквы
+        if char == ".":  # Wildcard (перебираем все возможные пути)
+            for child in node.children.values():  # O(26) максимум
                 if self._dfs(word, index + 1, child):
                     return True
-        else:  # Обычный поиск буквы
-            if char in node.children:
-                return self._dfs(word, index + 1, node.children[char])
+        elif char in node.children:  # Обычный поиск буквы O(1)
+            return self._dfs(word, index + 1, node.children[char])
 
-        return False  # Если совпадения не найдены
+        return False
 
+
+# 🔹 Тестирование
 wd = WordDictionary()
-wd.addWord("bad")
-wd.addWord("dad")
-wd.addWord("mad")
-print(wd.search("pad"))  # False
-print(wd.search("bad"))  # True
-print(wd.search(".ad"))  # True (".ad" совпадает с "bad", "dad", "mad")
-print(wd.search("b.."))  # True ("b.." совпадает с "bad")
+wd.add_word("bad")
+wd.add_word("dad")
+wd.add_word("mad")
+
+print(wd.search("pad"))  # ❌ False
+print(wd.search("bad"))  # ✅ True
+print(wd.search(".ad"))  # ✅ True (".ad" совпадает с "bad", "dad", "mad")
+print(wd.search("b.."))  # ✅ True ("b.." совпадает с "bad")
